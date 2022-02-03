@@ -1,0 +1,72 @@
+---
+title: "SIS_TDFP_Test"
+author: "Myles Hungerford"
+date: "2/3/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## HTS Forecasting Code
+```{r}
+
+```
+
+
+```{r HTS}
+library(hts)
+library(forecast)
+library(readxl)
+library(readr)
+
+## This needs to be edited to point to the Github repository.
+
+urlfile <- "https://raw.githubusercontent.com/myleshungerford/TopDownHierarchicalForecasting/main/SIS_Time_Series.csv"
+
+SIS_Time_Series <- read_csv(url(urlfile))
+
+View(SIS_Time_Series)
+
+SIS_Start_Year <- 2017
+
+freq <- 20
+
+## These variables need to be updated/checked every time you run the model
+Current_Year <- 2022
+Current_cycle_month <- 5
+current_month_name <- "FEB01"
+## End of updated Variables
+
+## These variables are derived, they do NOT need to be updated every month
+Forecast_horizon <- (freq - Current_cycle_month)
+nodes <- list(2, rep(2, 2), rep(2, 4), rep(2, 8), rep(2, 16), rep(2, 32))
+## End of variables
+
+## The following code will generate the alternate top-down time series for SIS
+
+SISts <- ts(SIS_Time_Series, start = c(SIS_Start_Year, 1), end = c(Current_Year, Current_cycle_month), frequency = freq)
+
+y <- hts(SISts, nodes = nodes)
+
+allf <- forecast(y, h = Forecast_horizon, method = "tdfp", FUN = function(x) ets(x))
+fcdf <- as.data.frame(allts(allf))
+write.table(fcdf, file=paste(current_month_name, "forecastSIS_ets_tdfp.csv", sep = "_"), sep=",", row.names=FALSE)
+
+allf <- forecast(y, h = Forecast_horizon, method = "tdfp",FUN = function(x) hw(x))
+fcdf <- as.data.frame(allts(allf))
+write.table(fcdf, file=paste(current_month_name, "forecastSIS_hw_tdfp.csv", sep = "_"), sep=",", row.names=FALSE)
+
+allf <- forecast(y, h = Forecast_horizon, method = "tdfp", FUN = function(x) stlf(x))
+fcdf <- as.data.frame(allts(allf))
+write.table(fcdf, file=paste(current_month_name, "forecastSIS_stlf_tdfp.csv", sep = "_"), sep=",", row.names=FALSE)
+
+allf <- forecast(y, h = Forecast_horizon, method = "tdfp", FUN = function(x) nnetar(x, repeats = 200))
+fcdf <- as.data.frame(allts(allf))
+write.table(fcdf, file=paste(current_month_name, "forecastSIS_nn_tdfp.csv", sep = "_"), sep=",", row.names=FALSE)
+
+allf <- forecast(y, h = Forecast_horizon, method = "tdfp", FUN = function(x) auto.arima(x))
+fcdf <- as.data.frame(allts(allf))
+write.table(fcdf, file=paste(current_month_name, "forecastSIS_aa_tdfp.csv", sep = "_"), sep=",", row.names=FALSE)
+```
